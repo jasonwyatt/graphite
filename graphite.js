@@ -1,4 +1,4 @@
-;(function(){
+(function(){
     'use strict';
     
     var undefined;
@@ -597,7 +597,110 @@
             //      String. String representation of the Graph.
             return '<Graph('+this.getId()+')>';
         };
-        
+        this.getShortestPath = function getShortestPath(startNode, endNode, edgeWeightCallback, searchHeuristicCallback){
+            // summary:
+            //      Finds the shortest path between the start node and the end 
+            //      node in the graph using Dijkstra's algorithm if heuristic 
+            //      is not given, or A* if a heuristic is provided. TODO: A*
+            // startNode: Node
+            //      The starting point in the graph. If the node is not part of 
+            //      the graph an exception will be thrown.
+            // endNode: Node
+            //      The ending point in the graph. If the node is not part of 
+            //      the graph, an exception will be thrown.
+            // edgeWeightCallback: function
+            //      Callback used to calculate the weight of edges between 
+            //      nodes. It will be passed an Edge object. Returns a non-
+            //      negative number.
+            // searchHeuristicCallback: function
+            //      Callback used as a search heuristic for A* pathfinding.
+            //      TODO: Figure out what this heuristic will be passed and
+            //      should return.
+            // returns:
+            //      Array<Edge>. The edges required to get from startNode to 
+            //      endNode, or null - if no path is possible.
+            // throws:
+            //      Exception if either the start or end nodes is not part of 
+            //      the graph.
+            
+            if ( !this.hasNode(startNode) || !this.hasNode(endNode) ) {
+                throw new Error("One of the endpoint nodes is not contained within the graph.");
+            }
+            
+            // implementation of dijkstra's algorithm from Wikipedia:
+            //  http://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+            // TODO: Use a min fibonacci heap instead of naiive solution
+            //
+            // TODO: conditionally do A* if searchHeuristic Callback is 
+            // available
+            //
+
+            var unvisited = [];
+
+            for ( var i = 0, len = _nodes.length; i < len; i++ ) {
+                _nodes[i].meta('distance', Number.POSITIVE_INFINITY);
+                _nodes[i].meta('visited', false);
+                _nodes[i].meta('best_incoming_edge', null);
+                unvisited.push(_nodes[i]);
+            }
+            startNode.meta('distance', 0);
+            
+            function popMin(){
+                var minDistance = Number.POSITIVE_INFINITY;
+                var minDistanceIndex = 0;
+
+                for ( var i = 0, len = unvisited.length; i < len; i++ ) {
+                    if ( unvisited[i].meta('distance') < minDistance ) {
+                        minDistance = unvisited[i].meta('distance');
+                        minDistanceIndex = i;
+                    }
+                }
+
+                var result = unvisited[minDistanceIndex];
+                unvisited.splice(minDistanceIndex, 1);
+                return result;
+            }
+
+            while ( unvisited.length > 0 ) {
+                var current = popMin();
+
+                if ( current.meta('distance') === Number.POSITIVE_INFINITY ) {
+                    return null;
+                }
+
+                if ( current === endNode ) {
+                    // we're done...
+                    break;
+                }
+
+                var outgoingEdges = this.getOutgoingEdges(current);
+                for ( var i = 0, len = outgoingEdges.length; i < len; i++ ) {
+                    var neighbor = outgoingEdges[i].getToNode();
+                    var stepDistance = edgeWeightCallback(current, neighbor);
+                    var total = current.meta('distance') + stepDistance;
+
+                    if ( total < neighbor.meta('distance') ) {
+                        neighbor.meta('distance', total);
+                        neighbor.meta('best_incoming_edge', outgoingEdges[i]);
+                    }
+                }
+            }
+
+            // reconstruct the path.
+            var path = [];
+            while ( current !== startNode ) {
+                path.unshift(current.meta('best_incoming_edge'));
+                current = path[0].getFromNode();
+            }
+
+            // reset all the meta data.
+            for ( var i = 0, len = _nodes.length; i < len; i++ ) {
+                _nodes[i].resetMeta();
+            }
+
+            return path;
+        };
+
         // ------------- begin setup ---------------- //
         
         for ( var i = 0, length = nodes.length; i < length; i++ ) {
