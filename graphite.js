@@ -463,6 +463,14 @@
             }
             return typeof nodesById[node] !== 'undefined';
         };
+        this.getNodes = function getNodes () {
+            // summary:
+            //      Gets an array containing all of the nodes in the graph.
+            // returns:
+            //      Array containing all of the nodes in the graph.
+
+            return _nodes.slice();
+        };
         this.getNode = function getNode (node) {
             // summary:
             //      Gets a node from the graph. If the node does not exist in 
@@ -529,6 +537,14 @@
             delete edgesByNodeId[node.getId()];
             
             return edges;
+        };
+        this.getEdges = function getEdges () {
+            // summary:
+            //      Gets all of the edges in the graph.
+            // returns:
+            //      Array containing all of the edges in the graph.
+            
+            return _edges.slice();
         };
         this.getOutgoingEdges = function getOutgoingEdges (node) {
             // summary:
@@ -711,11 +727,146 @@
             this.addEdge(edges[i]);
         }
     };
+
+    function drawRaphaelGraph(paper, graph, options) {
+        // summary:
+        //      Draws the provided graph onto the given RaphaelJS Paper object.
+        //      Will use a force-directed layout algorithm. 
+        //
+        //      TODO: allow for various layout algorithms. 
+        //
+        //      Adds references to the Raphael elements to the nodes and edges 
+        //      as attributes. Will use the ID function so that the references 
+        //      are unique to the drawing, unless a value for the "drawingId" 
+        //      parameter is provided in the options.
+        //
+        //      NOTE: Written for RaphaelJS 2.1.0
+        // paper: RaphaelJS Paper
+        //      Drawing surface where the graph will be drawn.
+        // graph: graphite.Graph
+        //      Graphite graph object.
+        // options: Object
+        //      Settings for the drawing. Defaults are shown below.
+        //      
+        //          // top: Number
+        //          //      The top edge of the drawing area for the graph.
+        //          top: 0,
+        //
+        //          // left: Number
+        //          //      The left edge of the drawing area for the graph.
+        //          left: 0,
+        //
+        //          // width: Number
+        //          //      The width of the drawing area for the graph.
+        //          width: 500,
+        //
+        //          // height: Number
+        //          //      The height of the drawing area for the graph.
+        //          height: 500,
+        //
+        //          // drawingId: Number|String
+        //          //      ID for the drawing. This ID will be used as a key 
+        //          //      on the nodes/edges in the graph in order to inject 
+        //          //      attributes into those objects for references to 
+        //          //      the Raphael Elements.
+        //          drawingId: /* generated */
+        //
+        //          // edgeLengthCallback: function(nodeA, nodeB)
+        //          //      Function used to provide insight into the lengths 
+        //          //      of the edges in the graph.  Should return a number 
+        //          //      representing the distance from `nodeA` to `nodeB`.
+        //          edgeLengthCallback: function(nodeA, nodeB) 
+        //      
+        // returns:
+        //      Object. Example:
+        //      
+        //          // drawingId: Number|String. 
+        //          //      The ID of the drawing, if it wasn't supplied in the
+        //          //      options object, one will be generated.
+        //          drawingId: /* generated */,
+        //
+        //          // raphaelSet: RaphaelJS Set object
+        //          //      RaphaelJS set object containing the nodes and 
+        //          //      edges of the graph.
+        //          raphaelSet: ...
+        //      
+
+        if ( typeof options === 'undefined' ) {
+            options = {};
+        }
+        
+        // set up defaults.
+        var top = options.top || 0,
+            left = options.left || 0,
+            width = options.width || 500,
+            height = options.height || 500,
+            drawingId = options.drawingId || generateID('drawing'),
+            edgeLengthCallback = options.edgeLengthCallback || function() { return 100; };
+
+        // get the graph elements
+        var nodes = graph.getNodes(),
+            edges = graph.getEdges();
+
+        // iteration variables
+        var i, j, k, iLen, jLen, kLen;
+
+        // drawing settings. TODO: make these configurable.
+        var nodeRadius = 20,
+            nodeColor = '#000000',
+            nodeLabelColor = '#FFFFFF',
+            nodeLabelSize = 8,
+            edgeColor = '#000000',
+            edgeWidth = 2,
+            edgeArrowSize = 10;
+
+        var resultSet = paper.set();
+
+        // build the elements for the nodes.
+        for ( i = 0, iLen = nodes.length; i < iLen; i++ ) {
+            var nodeGroup = nodes[i].attr(
+                    drawingId, 
+                    paper.set()
+                ),
+                nodeElem = paper.circle(0, 0, nodeRadius),
+                nodeLabel = paper.text(0, 0, nodes[i].attr('label') || nodes[i].getId()+'');
+
+            // Add the circle and label to the node group, and place the group 
+            //  randomly inside the display area.
+            nodeGroup.push(nodeElem, nodeLabel);
+            var x = Math.random()*width + left,
+                y = Math.random()*height + top;
+            nodeGroup.attr({
+                x: x,
+                y: y,
+                cx: x,
+                cy: y
+            });
+
+            nodeElem.attr({
+                fill: nodeColor
+            });
+
+            nodeLabel.attr({
+                "text-anchor": "middle",
+                fill: nodeLabelColor
+            });
+
+            resultSet.push(nodeGroup);
+        }
+
+        // TODO
+        
+        return {
+            drawingId: drawingId,
+            raphaelSet: resultSet
+        };
+    }
     
     var graphite = {
         Node: Node,
         Edge: Edge,
-        Graph: Graph
+        Graph: Graph,
+        drawRaphaelGraph: drawRaphaelGraph 
     };
     
     // export the graphite library.

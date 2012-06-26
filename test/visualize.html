@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Graphite Visualization Test App</title>
+        <style type="text/css">
+            body {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            #paper {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="paper"></div>
+        <script src="../graphite.js" type="text/javascript"></script>
+        <script src="https://raw.github.com/DmitryBaranovskiy/raphael/master/raphael.js" type="text/javascript"></script>
+        <script>
+            var nodes = [
+                new graphite.Node(),
+                new graphite.Node(),
+                new graphite.Node(),
+                new graphite.Node(),
+                new graphite.Node(),
+                new graphite.Node()
+            ];
+            var edges = [
+                new graphite.Edge(nodes[0], nodes[1]),
+                new graphite.Edge(nodes[0], nodes[4]),
+                new graphite.Edge(nodes[1], nodes[4]),
+                new graphite.Edge(nodes[3], nodes[4]),
+                new graphite.Edge(nodes[2], nodes[3]),
+                new graphite.Edge(nodes[1], nodes[2]),
+                new graphite.Edge(nodes[3], nodes[5]),
+            ];
+            var graph = new graphite.Graph(nodes, edges, false);
+
+            var paper = new Raphael(document.getElementById('paper'), 800, 800);
+            graphite.drawRaphaelGraph(paper, graph);
+        </script>
+
+    </body>
+</html>
